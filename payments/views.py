@@ -75,7 +75,7 @@ class PaymentCreateView(APIView):
             months = 1
 
         fill_count = get_fill_frequency(bin_obj)
-        freq_mult = get_frequency_multiplier(fill_count)
+        freq_mult = get_frequency_multiplier(fill_count) if months > 1 else 1.0
         monthly_mult = get_monthly_discount_rate(months)
 
         recyclable_weight = float(data.get('recyclable_weight', 0))
@@ -227,7 +227,7 @@ def calculate_fee(request):
         try:
             bin_obj = SmartBin.objects.get(bin_id=bin_id)
             fill_count = get_fill_frequency(bin_obj)
-            freq_mult = get_frequency_multiplier(fill_count)
+            freq_mult = get_frequency_multiplier(fill_count) if months > 1 else 1.0
         except SmartBin.DoesNotExist:
             pass
     
