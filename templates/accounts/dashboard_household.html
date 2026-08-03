@@ -175,7 +175,7 @@ async function loadHouseholdStats() {
         document.getElementById('avgGarbage').textContent = (stats.avg_garbage || 0).toFixed(1) + '%';
         
         document.getElementById('recyclableWeight').textContent = formatWeight(stats.total_recyclable_weight || 0);
-        const discount = (stats.total_recyclable_weight || 0) * 500;
+        const discount = (stats.total_recyclable_weight || 0) / 1000 * 500;
         document.getElementById('estimatedDiscount').textContent = 'TZS ' + discount.toLocaleString();
     } catch (error) {
         console.error('Error loading household stats:', error);

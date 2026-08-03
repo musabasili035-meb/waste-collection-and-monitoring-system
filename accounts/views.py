@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout, authenticate, update_session_auth
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -110,7 +111,7 @@ def dashboard(request):
         total_paid = payments.filter(payment_status='completed').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
         
         avg_garbage = total_garbage / total_bins_count if total_bins_count > 0 else 0
-        estimated_discount = total_recyclable_weight * 500
+        estimated_discount = (total_recyclable_weight / 1000) * settings.RECYCLABLE_RATE_PER_KG
         
         hh_context = {
             'total_bins': total_bins_count,
