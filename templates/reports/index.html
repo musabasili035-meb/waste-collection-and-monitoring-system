@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Analytics & Reports</h1>
+            <p class="text-gray-500 dark:text-gray-400">Comprehensive waste management insights</p>
+        </div>
+        <div class="flex space-x-2 mt-4 md:mt-0">
+            <button onclick="exportCSV()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                <i class="fas fa-file-csv mr-2"></i>Export CSV
+            </button>
+            <button onclick="exportPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                <i class="fas fa-file-pdf mr-2"></i>Export PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border-l-4 border-blue-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Total Collections</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalCollections">-</p>
+            </div>
+            <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+                <i class="fas fa-trash-restore text-blue-600 dark:text-blue-400"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Recyclables (g)</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalRecyclables">-</p>
+            </div>
+            <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
+                <i class="fas fa-recycle text-green-600 dark:text-green-400"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border-l-4 border-purple-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Total Revenue</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalRevenue">-</p>
+            </div>
+            <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
+                <i class="fas fa-coins text-purple-600 dark:text-purple-400"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border-l-4 border-yellow-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Efficiency Rate</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="efficiencyRate">-</p>
+            </div>
+            <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900">
+                <i class="fas fa-percentage text-yellow-600 dark:text-yellow-400"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="fas fa-chart-line mr-2 text-green-600"></i>Waste Trends (30 Days)
+            </h2>
+            <select id="trendDays" onchange="loadTrends()" class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                <option value="7">7 Days</option>
+                <option value="14">14 Days</option>
+                <option value="30" selected>30 Days</option>
+                <option value="90">90 Days</option>
+            </select>
+        </div>
+        <div id="trendsChart" class="h-80"></div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-chart-pie mr-2 text-green-600"></i>Waste Composition
+        </h2>
+        <div id="compositionChart" class="h-80"></div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-th-list mr-2 text-green-600"></i>Bin Usage Statistics
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Bin ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Collections</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Avg Fill</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Recyclables</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="binUsageTable" class="divide-y divide-gray-200 dark:divide-gray-700">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-money-bill-wave mr-2 text-green-600"></i>Payment Summary
+        </h2>
+        <div id="paymentSummary" class="space-y-4">
+        </div>
+    </div>
+</div>
+
+<script>
+let trendsChart, compositionChart;
+let currentReportData = {};
+
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/stats/dashboard/');
+        const stats = await response.json();
+        
+        document.getElementById('totalCollections').textContent = stats.active_bins || 0;
+        document.getElementById('totalRevenue').textContent = 'TZS ' + (stats.total_payments || 0).toLocaleString();
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+async function loadRecyclableStats() {
+    try {
+        const response = await fetch('/api/stats/recyclable/');
+        const stats = await response.json();
+        
+        document.getElementById('totalRecyclables').textContent = formatWeight(stats.total_recyclable_weight || 0);
+        
+        const efficiency = stats.recyclable_rate || 0;
+        document.getElementById('efficiencyRate').textContent = efficiency.toFixed(1) + '%';
+    } catch (error) {
+        console.error('Error loading recyclable stats:', error);
+    }
+}
+
+async function loadTrends() {
+    try {
+        const days = document.getElementById('trendDays').value;
+        const response = await fetch(`/api/stats/waste-trends/?days=${days}`);
+        const data = await response.json();
+        
+        currentReportData.trends = data;
+        
+        const ctx = document.getElementById('trendsChart').getContext('2d');
+        
+        if (trendsChart) trendsChart.destroy();
+        
+        trendsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date.substring(5)),
+                datasets: [{
+                    label: 'Avg Garbage %',
+                    data: data.map(d => d.avg_garbage),
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }, {
+                    label: 'Avg Recyclable %',
+                    data: data.map(d => d.avg_recyclable),
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+        
+        updateCompositionChart(data);
+    } catch (error) {
+        console.error('Error loading trends:', error);
+    }
+}
+
+function updateCompositionChart(data) {
+    const avgGarbage = data.reduce((sum, d) => sum + d.avg_garbage, 0) / data.length || 0;
+    const avgRecyclable = data.reduce((sum, d) => sum + d.avg_recyclable, 0) / data.length || 0;
+    
+    const ctx = document.getElementById('compositionChart').getContext('2d');
+    
+    if (compositionChart) compositionChart.destroy();
+    
+    compositionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Garbage', 'Recyclable'],
+            datasets: [{
+                data: [avgGarbage, avgRecyclable],
+                backgroundColor: ['rgb(239, 68, 68)', 'rgb(34, 197, 94)'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+async function loadBinUsage() {
+    try {
+        const response = await fetch('/api/stats/bin-usage/');
+        const data = await response.json();
+        
+        currentReportData.binUsage = data;
+        
+        document.getElementById('binUsageTable').innerHTML = data.slice(0, 15).map(bin => `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">${bin.bin_id}</td>
+                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">${bin.total_collections || 0}</td>
+                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">${bin.avg_fill_level || 0}%</td>
+                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">${formatWeight(bin.total_recyclable || 0)}</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-1 text-xs rounded-full ${bin.avg_fill_level >= 80 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : bin.avg_fill_level >= 50 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}">
+                        ${bin.avg_fill_level >= 80 ? 'Full' : bin.avg_fill_level >= 50 ? 'Moderate' : 'Empty'}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading bin usage:', error);
+    }
+}
+
+async function loadPaymentSummary() {
+    try {
+        const response = await fetch('/api/stats/payments/');
+        const data = await response.json();
+        
+        currentReportData.payments = data;
+        
+        document.getElementById('paymentSummary').innerHTML = `
+            <div class="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                <p class="text-sm text-green-600 dark:text-green-400">Completed</p>
+                <p class="text-2xl font-bold text-green-700 dark:text-green-300">${(data.completed_count || 0).toLocaleString()}</p>
+            </div>
+            <div class="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                <p class="text-sm text-blue-600 dark:text-blue-400">Total Amount</p>
+                <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">${(data.total_amount || 0).toLocaleString()} TZS</p>
+            </div>
+            <div class="p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
+                <p class="text-sm text-purple-600 dark:text-purple-400">Average Payment</p>
+                <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">${(data.avg_payment || 0).toLocaleString()} TZS</p>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error loading payment summary:', error);
+    }
+}
+
+function exportCSV() {
+    if (!currentReportData.trends) return;
+    
+    let csv = 'Date,Avg Garbage %,Avg Recyclable %\n';
+    currentReportData.trends.forEach(d => {
+        csv += `${d.date},${d.avg_garbage},${d.avg_recyclable}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'waste_trends.csv';
+    a.click();
+}
+
+function exportPDF() {
+    window.location.href = '/reports/export/pdf/';
+}
+
+loadDashboardStats();
+loadRecyclableStats();
+loadTrends();
+loadBinUsage();
+loadPaymentSummary();
+</script>
+{% endblock %}

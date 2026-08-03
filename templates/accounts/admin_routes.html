@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block title %}Collector Routes - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Routes Management</h1>
+    <p class="text-gray-500 dark:text-gray-400">Optimized collector routes prioritized by bin fill level</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border-l-4 border-red-500">
+        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ full_bins_count }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Full Bins</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border-l-4 border-blue-500">
+        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ collectors.count }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Collectors</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border-l-4 border-orange-500">
+        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ unassigned_count }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Unassigned Full Bins</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border-l-4 border-green-500">
+        <button onclick="optimizeAllRoute()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+            <i class="fas fa-magic mr-2"></i>Optimize All
+        </button>
+    </div>
+</div>
+
+<div class="space-y-4 mb-6">
+    {% for route in collector_routes %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">{{ route.collector.username }}</h3>
+                        <p class="text-blue-100 text-sm">{{ route.collector.email }}</p>
+                    </div>
+                </div>
+                <div class="text-right text-white">
+                    <p class="text-sm">{{ route.full_count }} full bins</p>
+                    {% if route.total_distance > 0 %}
+                    <p class="text-sm text-blue-100">{{ route.total_distance }} km route</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if route.sorted_route %}
+        <div class="p-4">
+            <div class="flex items-center mb-4 text-sm text-gray-500 dark:text-gray-400">
+                <i class="fas fa-route mr-2 text-blue-500"></i>
+                <span>Optimized route — prioritized by fill level (highest first) then nearest distance</span>
+            </div>
+            <div class="space-y-2">
+                {% for bin in route.sorted_route %}
+                <div class="flex items-center p-3 rounded-lg {% if bin.garbage_level >= 95 %}bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700{% elif bin.garbage_level >= 90 %}bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700{% else %}bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700{% endif %}">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold mr-3">
+                        {{ forloop.counter }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-gray-900 dark:text-white truncate">{{ bin.bin_id }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ bin.location_name }}</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500">{{ bin.household_name }}</p>
+                    </div>
+                    <div class="flex-shrink-0 ml-4 text-right">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                                <div class="h-2.5 rounded-full {% if bin.garbage_level >= 95 %}bg-red-600{% elif bin.garbage_level >= 90 %}bg-orange-500{% else %}bg-yellow-500{% endif %}" style="width: {{ bin.garbage_level }}%"></div>
+                            </div>
+                            <span class="text-sm font-semibold {% if bin.garbage_level >= 95 %}text-red-600{% elif bin.garbage_level >= 90 %}text-orange-600{% else %}text-yellow-600{% endif %}">{{ bin.garbage_level|floatformat:0 }}%</span>
+                        </div>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            {% if bin.garbage_level >= 95 %}
+                            <i class="fas fa-exclamation-triangle text-red-500 mr-1"></i>Critical
+                            {% elif bin.garbage_level >= 90 %}
+                            <i class="fas fa-exclamation-circle text-orange-500 mr-1"></i>Urgent
+                            {% else %}
+                            <i class="fas fa-clock text-yellow-500 mr-1"></i>High
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if route.total_distance > 0 %}
+            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                    <i class="fas fa-road text-blue-500 mr-2"></i>
+                    <strong>Total route distance:</strong> {{ route.total_distance }} km
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+            <i class="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
+            <p>No full bins assigned to this collector</p>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
+        <i class="fas fa-users text-gray-300 dark:text-gray-600 text-5xl mb-4"></i>
+        <p class="text-gray-500 dark:text-gray-400 text-lg">No collectors found</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if unassigned_full_bins %}
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-8">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-exclamation-triangle mr-2 text-orange-500"></i>Unassigned Full Bins
+    </h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">These bins are full but have no collector assigned. Assign a collector to include them in route optimization.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {% for bin in unassigned_full_bins %}
+        <div class="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+            <p class="font-medium text-gray-900 dark:text-white">{{ bin.bin_id }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ bin.location_name|default:'Unknown' }}</p>
+            {% with bin.iot_data.first as latest %}
+            <p class="text-sm font-medium text-orange-600">{{ latest.garbage_level|floatformat:0 }}% Full</p>
+            {% endwith %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Full Bins Map
+    </h2>
+    <div id="routeMap" class="h-96 w-full rounded-lg bg-gray-100 dark:bg-gray-700"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoF9om9IbLyb4sk4pTyLjBr5CdHm6mGHQ&v=weekly" async defer></script>
+<script>
+let routeMap;
+let markers = [];
+let routePolylines = [];
+
+function initMap() {
+    const mapDiv = document.getElementById('routeMap');
+    if (!mapDiv) return;
+    
+    routeMap = new google.maps.Map(mapDiv, {
+        center: { lat: -8.899, lng: 33.454 },
+        zoom: 14,
+        mapTypeId: 'roadmap'
+    });
+    
+    loadAllRouteData();
+}
+
+window.initMap = initMap;
+
+window.addEventListener('load', function() {
+    if (typeof google !== 'undefined' && google.maps) {
+        initMap();
+    } else {
+        setTimeout(function() {
+            if (typeof google !== 'undefined' && google.maps) {
+                initMap();
+            }
+        }, 2000);
+    }
+});
+
+function clearRouteDisplay() {
+    markers.forEach(m => m.setMap(null));
+    routePolylines.forEach(p => p.setMap(null));
+    markers = [];
+    routePolylines = [];
+}
+
+async function drawRoadRoute(waypoints, map) {
+    const MAX_WAYPOINTS = 25;
+    const STYLE = { strokeColor: '#3B82F6', strokeWeight: 4, strokeOpacity: 0.9 };
+    const FALLBACK_STYLE = { strokeColor: '#3B82F6', strokeOpacity: 0.4, strokeWeight: 2 };
+    let polylines = [];
+
+    let i = 0;
+    while (i < waypoints.length - 1) {
+        const chunkEnd = Math.min(i + MAX_WAYPOINTS + 1, waypoints.length - 1);
+        const chunk = waypoints.slice(i, chunkEnd + 1);
+        const coordsStr = chunk.map(p => `${p.lng},${p.lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                const path = data.routes[0].geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+                const polyline = new google.maps.Polyline({ path, map, ...STYLE });
+                polylines.push(polyline);
+            } else {
+                throw new Error('OSRM error: ' + (data.code || 'unknown'));
+            }
+        } catch (e) {
+            const segmentPath = waypoints.slice(i, chunkEnd + 1);
+            const polyline = new google.maps.Polyline({
+                path: segmentPath, geodesic: true, map, ...FALLBACK_STYLE,
+            });
+            polylines.push(polyline);
+        }
+        i = chunkEnd;
+    }
+    return polylines;
+}
+
+async function loadAllRouteData() {
+    try {
+        const response = await fetch('/api/route/optimize/');
+        const data = await response.json();
+        clearRouteDisplay();
+        
+        if (!routeMap || !data.route || data.route.length === 0) return;
+        
+        const path = [];
+        
+        if (data.depot) {
+            const depotPos = { lat: data.depot.lat, lng: data.depot.lng };
+            const depotMarker = new google.maps.Marker({
+                position: depotPos,
+                map: routeMap,
+                title: 'Depot (Start)',
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 12,
+                    fillColor: '#22C55E',
+                    fillOpacity: 1,
+                    strokeColor: '#ffffff',
+                    strokeWeight: 3,
+                },
+                label: {
+                    text: 'D',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                }
+            });
+            markers.push(depotMarker);
+            path.push(depotPos);
+        }
+        
+        data.route.forEach((bin, index) => {
+            const fillPercent = bin.garbage_level || 80;
+            const color = fillPercent >= 95 ? '#EF4444' : fillPercent >= 90 ? '#F59E0B' : '#3B82F6';
+            
+            const marker = new google.maps.Marker({
+                position: { lat: bin.lat, lng: bin.lng },
+                map: routeMap,
+                title: `${bin.bin_id} - ${fillPercent}%`,
+                label: {
+                    text: `${index + 1}`,
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                },
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 10,
+                    fillColor: color,
+                    fillOpacity: 0.9,
+                    strokeColor: '#ffffff',
+                    strokeWeight: 2,
+                }
+            });
+            
+            const info = new google.maps.InfoWindow({
+                content: `<div style="font-size:13px;line-height:1.5">
+                    <b>#${index + 1}: ${bin.bin_id}</b><br>
+                    <span>Location: ${bin.location_name || 'Unknown'}</span><br>
+                    <span style="color:${fillPercent >= 95 ? '#dc2626' : fillPercent >= 90 ? '#ea580c' : '#ca8a04'}">Fill: ${fillPercent}%</span>
+                    ${bin.assigned_collector ? `<br><span>Collector: ${bin.assigned_collector}</span>` : ''}
+                </div>`
+            });
+            marker.addListener('click', () => info.open(routeMap, marker));
+            markers.push(marker);
+            path.push({ lat: bin.lat, lng: bin.lng });
+        });
+        
+        if (path.length > 1) {
+            routePolylines = await drawRoadRoute(path, routeMap);
+        }
+        
+        const bounds = new google.maps.LatLngBounds();
+        path.forEach(p => bounds.extend(p));
+        routeMap.fitBounds(bounds);
+        
+    } catch (error) {
+        console.error('Error loading route data:', error);
+    }
+}
+
+function optimizeAllRoute() {
+    fetch('/api/route/optimize/')
+        .then(res => res.json())
+        .then(data => {
+            alert(`Route optimized: ${data.bin_count} bins, ${data.total_distance} km`);
+            loadAllRouteData();
+            location.reload();
+        })
+        .catch(err => console.error(err));
+}
+</script>
+{% endblock %}

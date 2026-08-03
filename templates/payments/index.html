@@ -1,0 +1,439 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Digital Payments</h1>
+    <p class="text-gray-500 dark:text-gray-400">Make payments and view receipts</p>
+</div>
+
+{% if user.user_type != 'collector' %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-credit-card mr-2 text-green-600"></i>Make Payment
+        </h2>
+        <form id="paymentForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Household</label>
+                    <select id="householdSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bin ID</label>
+                    <input type="text" id="binInput" placeholder="e.g., BIN001-1"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Recyclable Weight</label>
+                    <input type="number" id="weightInput" step="0.01" placeholder="Enter weight in grams"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Method</label>
+                    <select id="paymentMethod" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+                        <option value="mobile">Mobile Money (M-Pesa)</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="cash">Cash</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pay for</label>
+                    <select id="monthsSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+                        <option value="1">1 Month</option>
+                        <option value="3">3 Months (5% discount)</option>
+                        <option value="6">6 Months (10% discount)</option>
+                        <option value="12">12 Months (15% discount)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="feeBreakdown" class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div id="frequencyInfo" class="hidden mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600 dark:text-gray-400">Base Monthly Fee:</span>
+                    <span class="font-semibold text-gray-900 dark:text-white" id="baseFeeDisplay">2,000 TZS</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600 dark:text-gray-400">Frequency Multiplier:</span>
+                    <span class="font-semibold text-gray-900 dark:text-white" id="freqMultDisplay">1.0x</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600 dark:text-gray-400">Prepay Discount:</span>
+                    <span class="font-semibold text-green-600" id="prepayDiscDisplay">0%</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600 dark:text-gray-400">Adjusted Monthly:</span>
+                    <span class="font-semibold text-gray-900 dark:text-white" id="adjMonthlyDisplay">2,000 TZS</span>
+                </div>
+                <div class="flex justify-between items-center mb-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                    <span class="text-gray-600 dark:text-gray-400">Total (<span id="monthsLabel">1</span> month(s)):</span>
+                    <span class="font-semibold text-gray-900 dark:text-white" id="subtotalDisplay">2,000 TZS</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600 dark:text-gray-400">Recyclable Discount:</span>
+                    <span class="font-semibold text-green-600" id="discountDisplay">0 TZS</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-600">
+                    <span class="font-bold text-gray-900 dark:text-white">Total to Pay:</span>
+                    <span class="text-2xl font-bold text-green-600" id="totalDisplay">2,000 TZS</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>Discount: 500 TZS per 1000g of recyclables
+                </p>
+            </div>
+            
+            <button type="submit" class="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center">
+                <i class="fas fa-lock mr-2"></i>Pay Now
+            </button>
+        </form>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-wallet mr-2 text-green-600"></i>Quick Stats
+        </h2>
+        <div class="space-y-4">
+            <div class="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                <p class="text-sm text-blue-600 dark:text-blue-400">Total Paid</p>
+                <p class="text-2xl font-bold text-blue-700 dark:text-blue-300" id="totalPaidStats">0 TZS</p>
+            </div>
+            <div class="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                <p class="text-sm text-green-600 dark:text-green-400">Total Discount</p>
+                <p class="text-2xl font-bold text-green-700 dark:text-green-300" id="totalDiscountStats">0 TZS</p>
+            </div>
+            <div class="p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
+                <p class="text-sm text-purple-600 dark:text-purple-400">Transactions</p>
+                <p class="text-2xl font-bold text-purple-700 dark:text-purple-300" id="transactionCount">0</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-history mr-2 text-green-600"></i>Payment History
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Household</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Bin</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Transaction ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Amount</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentHistory" class="divide-y divide-gray-200 dark:divide-gray-700">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-receipt mr-2 text-green-600"></i>Recent Receipts
+        </h2>
+        <div id="receiptsList" class="space-y-3 max-h-80 overflow-y-auto">
+        </div>
+    </div>
+</div>
+
+<div id="receiptModal" class="fixed top-4 right-4 z-[100] hidden animate-slide-up">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-green-200 dark:border-green-800 w-64">
+        <div id="receiptContent" class="p-3 text-xs space-y-1">
+        </div>
+    </div>
+</div>
+
+<script>
+const RATE_PER_KG = 500;
+const USER_TYPE = '{{ user.user_type }}';
+let currentReceipt = null;
+let currentPricing = null;
+
+async function loadHouseholds() {
+    try {
+        const response = await fetch('/api/households/');
+        const households = await response.json();
+        document.getElementById('householdSelect').innerHTML = households.map(hh => 
+            `<option value="${hh.id}">${hh.name} - ${hh.address}</option>`
+        ).join('');
+    } catch (error) {
+        console.error('Error loading households:', error);
+    }
+}
+
+async function updatePricing() {
+    const binId = document.getElementById('binInput').value.trim();
+    const weight = parseFloat(document.getElementById('weightInput').value) || 0;
+    const months = parseInt(document.getElementById('monthsSelect').value) || 1;
+    
+    let url = `/api/calculate-fee/?recyclable_weight=${weight}&months=${months}`;
+    if (binId) url += `&bin_id=${encodeURIComponent(binId)}`;
+    
+    try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        currentPricing = data;
+        
+        document.getElementById('baseFeeDisplay').textContent = parseInt(data.base_monthly_fee).toLocaleString() + ' TZS';
+        document.getElementById('freqMultDisplay').textContent = data.frequency_multiplier + 'x';
+        document.getElementById('adjMonthlyDisplay').textContent = parseInt(data.adjusted_monthly_rate).toLocaleString() + ' TZS';
+        document.getElementById('monthsLabel').textContent = data.months;
+        document.getElementById('subtotalDisplay').textContent = parseInt(data.adjusted_monthly_rate * data.months).toLocaleString() + ' TZS';
+        document.getElementById('discountDisplay').textContent = parseInt(data.discount).toLocaleString() + ' TZS';
+        document.getElementById('totalDisplay').textContent = parseInt(data.total).toLocaleString() + ' TZS';
+        
+        const prepayPct = Math.round((1 - data.monthly_discount_rate) * 100);
+        document.getElementById('prepayDiscDisplay').textContent = prepayPct > 0 ? prepayPct + '%' : '0%';
+        
+        const freqInfo = document.getElementById('frequencyInfo');
+        if (data.fill_frequency_score > 0) {
+            let tier = 'normal';
+            if (data.fill_frequency_score > 7) tier = 'high';
+            else if (data.fill_frequency_score > 3) tier = 'medium';
+            freqInfo.innerHTML = `<div class="text-xs"><span class="font-semibold">Fill Alert:</span> Bin has been full <b>${data.fill_frequency_score}</b> times in the last 30 days (${tier} usage — ${data.frequency_multiplier}x multiplier applied)</div>`;
+            freqInfo.classList.remove('hidden');
+        } else if (binId) {
+            freqInfo.innerHTML = `<div class="text-xs"><span class="text-green-600 font-semibold">Low Usage:</span> Bin reported full <b>0</b> times in the last 30 days — standard rate applied.</div>`;
+            freqInfo.classList.remove('hidden');
+        } else {
+            freqInfo.classList.add('hidden');
+        }
+    } catch (e) {
+        console.error('Error updating pricing:', e);
+    }
+}
+
+const binInput = document.getElementById('binInput');
+const weightInput = document.getElementById('weightInput');
+const monthsSelect = document.getElementById('monthsSelect');
+
+if (binInput) binInput.addEventListener('input', updatePricing);
+if (weightInput) weightInput.addEventListener('input', updatePricing);
+if (monthsSelect) monthsSelect.addEventListener('change', updatePricing);
+
+async function loadPayments() {
+    try {
+        const url = USER_TYPE === 'collector' ? '/api/payments/all/' : '/api/payments/history/';
+        const response = await fetch(url);
+        const payments = await response.json();
+        
+        let totalPaid = 0;
+        let totalDiscount = 0;
+        
+        document.getElementById('paymentHistory').innerHTML = payments.map(p => {
+            const amount = parseFloat(p.total || p.amount || 0);
+            const discount = parseFloat(p.discount || 0);
+            totalPaid += amount;
+            totalDiscount += discount;
+            const periodText = p.period_start && p.period_end ? `${p.period_start} to ${p.period_end}` : '';
+            return `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">${p.household || ''}</td>
+                <td class="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400">${p.bin_id || ''}</td>
+                <td class="px-4 py-3 text-sm font-mono text-gray-900 dark:text-white">${(p.transaction_id || '').substring(0, 12)}...</td>
+                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">${amount.toLocaleString()} TZS</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-1 text-xs rounded-full ${(p.status || 'completed') === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
+                        ${p.status || 'Completed'}
+                    </span>
+                </td>
+            </tr>
+        `}).join('');
+        
+        const totalPaidEl = document.getElementById('totalPaidStats');
+        const totalDiscEl = document.getElementById('totalDiscountStats');
+        const txnCountEl = document.getElementById('transactionCount');
+        if (totalPaidEl) totalPaidEl.textContent = totalPaid.toLocaleString() + ' TZS';
+        if (totalDiscEl) totalDiscEl.textContent = totalDiscount.toLocaleString() + ' TZS';
+        if (txnCountEl) txnCountEl.textContent = payments.length;
+    } catch (error) {
+        console.error('Error loading payments:', error);
+    }
+}
+
+async function loadReceipts() {
+    try {
+        const response = await fetch('/api/receipts/');
+        const receipts = await response.json();
+        
+        document.getElementById('receiptsList').innerHTML = receipts.slice(0, 10).map(r => `
+            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer" onclick="viewReceipt('${r.id}')">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-semibold text-gray-900 dark:text-white">${r.receipt_number}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">${r.user_name} - ${r.bin_id}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-green-600">${parseInt(r.amount_paid).toLocaleString()} TZS</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">${new Date(r.date_issued).toLocaleDateString()}</p>
+                    </div>
+                </div>
+            </div>
+        `).join('') || '<p class="text-gray-500 dark:text-gray-400">No receipts yet.</p>';
+    } catch (error) {
+        console.error('Error loading receipts:', error);
+    }
+}
+
+function viewReceipt(id) {
+    fetch('/api/receipts/')
+        .then(res => res.json())
+        .then(receipts => {
+            const receipt = receipts.find(r => r.id == id);
+            if (receipt) {
+                showReceiptModal(receipt);
+            }
+        });
+}
+
+function showReceiptModal(receipt) {
+    currentReceipt = receipt;
+    document.getElementById('receiptContent').innerHTML = `
+        <div class="flex items-center gap-2 text-green-700 dark:text-green-400 font-semibold mb-2">
+            <i class="fas fa-check-circle text-xs"></i>
+            <span>Payment Successful</span>
+            <button onclick="closeReceiptModal()" class="ml-auto text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="flex justify-between"><span class="text-gray-400">Receipt</span><span class="font-mono text-gray-700 dark:text-gray-200">${receipt.receipt_number}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Bin</span><span class="text-gray-700 dark:text-gray-200">${receipt.bin_id}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Total</span><span class="font-bold text-green-700 dark:text-green-400">${parseInt(receipt.amount_paid).toLocaleString()} TZS</span></div>
+        ${receipt.period_start ? `<div class="flex justify-between"><span class="text-gray-400">Period</span><span class="text-gray-700 dark:text-gray-200">${receipt.period_start} to ${receipt.period_end}</span></div>` : ''}
+        <div class="flex gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <button onclick="downloadReceipt()" class="flex-1 py-1.5 text-[10px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded">Download</button>
+            <button onclick="closeReceiptModal()" class="flex-1 py-1.5 text-[10px] font-semibold text-gray-500 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded">Close</button>
+        </div>
+    `;
+    document.getElementById('receiptModal').classList.remove('hidden');
+    setTimeout(() => { const m = document.getElementById('receiptModal'); if (m && !m.classList.contains('hidden')) closeReceiptModal(); }, 5000);
+}
+
+function closeReceiptModal() {
+    document.getElementById('receiptModal').classList.add('hidden');
+}
+
+function downloadReceipt() {
+    if (!currentReceipt) return;
+    
+    const content = `
+RECEIPT
+================================
+EcoYunga - Smart Waste Management
+--------------------------------
+Receipt #: ${currentReceipt.receipt_number}
+Date: ${new Date(currentReceipt.date_issued).toLocaleString()}
+
+Household: ${currentReceipt.user_name}
+Bin ID: ${currentReceipt.bin_id}
+Recyclable Weight: ${formatWeight(currentReceipt.recyclable_weight || 0)}
+
+--------------------------------
+Base Monthly Fee:  2,000 TZS
+Adjusted Monthly:  ${parseInt(currentPricing?.adjusted_monthly_rate || 2000).toLocaleString()} TZS
+Months Paid:       ${currentPricing?.months || 1}
+Subtotal:          ${parseInt((currentPricing?.adjusted_monthly_rate || 2000) * (currentPricing?.months || 1)).toLocaleString()} TZS
+Recyclable Discount: -${parseInt(currentReceipt.discount_applied).toLocaleString()} TZS
+--------------------------------
+TOTAL PAID:        ${parseInt(currentReceipt.amount_paid).toLocaleString()} TZS
+================================
+
+Thank you for your payment!
+    `;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `receipt_${currentReceipt.receipt_number}.txt`;
+    a.click();
+}
+
+const paymentForm = document.getElementById('paymentForm');
+if (paymentForm) paymentForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const weight = parseFloat(document.getElementById('weightInput').value) || 0;
+    const binId = document.getElementById('binInput').value.trim();
+    const months = parseInt(document.getElementById('monthsSelect').value) || 1;
+    if (!binId) { alert('Please enter a Bin ID'); return; }
+    if (!document.getElementById('householdSelect').value) { alert('Please select a household'); return; }
+    
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    
+    try {
+        const csrfToken = getCookie('csrftoken');
+        const response = await fetch('/api/payments/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                household_id: document.getElementById('householdSelect').value,
+                bin_id: binId,
+                recyclable_weight: weight,
+                payment_method: document.getElementById('paymentMethod').value,
+                months: months,
+            })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            showReceiptModal({
+                receipt_number: result.receipt_number,
+                user_name: document.getElementById('householdSelect').options[document.getElementById('householdSelect').selectedIndex]?.text.split(' - ')[0] || '',
+                bin_id: binId,
+                amount_paid: result.amount_paid,
+                discount_applied: result.discount_applied,
+                date_issued: new Date().toISOString(),
+                payment_method: document.getElementById('paymentMethod').value,
+                recyclable_weight: weight,
+                period_start: result.period_start || null,
+                period_end: result.period_end || null,
+            });
+            currentPricing = result;
+            loadPayments();
+            loadReceipts();
+            document.getElementById('paymentForm').reset();
+            updatePricing();
+        } else {
+            alert('Payment failed: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('Payment failed. Please try again.');
+    } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-lock mr-2"></i>Pay Now';
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+if (document.getElementById('householdSelect')) {
+    loadHouseholds();
+}
+loadPayments();
+loadReceipts();
+</script>
+{% endblock %}

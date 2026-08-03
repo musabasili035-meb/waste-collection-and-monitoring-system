@@ -1,0 +1,464 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="mb-4 sm:mb-8">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400">Smart IoT-Based Waste Collection Monitoring - Iyunga, Mbeya</p>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-blue-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Total Bins</p>
+                <p class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white" id="totalBins">-</p>
+            </div>
+            <div class="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-900 hidden sm:block">
+                <i class="fas fa-trash-alt text-blue-600 dark:text-blue-400 text-xl"></i>
+            </div>
+        </div>
+        <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2">Active smart bins</p>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-red-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Full Bins</p>
+                <p class="text-xl sm:text-3xl font-bold text-red-600" id="fullBins">-</p>
+            </div>
+            <div class="p-2 sm:p-3 rounded-full bg-red-100 dark:bg-red-900 hidden sm:block">
+                <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-xl"></i>
+            </div>
+        </div>
+        <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2">Need collection</p>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Households</p>
+                <p class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white" id="totalHouseholds">-</p>
+            </div>
+            <div class="p-2 sm:p-3 rounded-full bg-green-100 dark:bg-green-900 hidden sm:block">
+                <i class="fas fa-home text-green-600 dark:text-green-400 text-xl"></i>
+            </div>
+        </div>
+        <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2">Registered</p>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-purple-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Revenue</p>
+                <p class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white" id="totalPayments">-</p>
+            </div>
+            <div class="p-2 sm:p-3 rounded-full bg-purple-100 dark:bg-purple-900 hidden sm:block">
+                <i class="fas fa-coins text-purple-600 dark:text-purple-400 text-xl"></i>
+            </div>
+        </div>
+        <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2">TZS</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6" id="mapSection">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Interactive Map
+            </h2>
+            <div class="flex space-x-2">
+                <button onclick="refreshMap()" class="px-3 py-1 text-xs sm:text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+                    <i class="fas fa-sync-alt mr-1"></i>Refresh
+                </button>
+                {% if user.user_type == 'admin' %}
+                <button onclick="seedData()" class="px-3 py-1 text-xs sm:text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-seedling mr-1"></i>Seed
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div id="mainMap" class="h-64 sm:h-80 lg:h-96 w-full rounded-lg bg-gray-100 dark:bg-gray-700"></div>
+        <div class="flex items-center justify-center flex-wrap gap-3 sm:gap-4 mt-3 sm:mt-4">
+            <div class="flex items-center">
+                <span class="w-3 h-3 rounded-full bg-green-500 mr-1.5"></span>
+                <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Empty</span>
+            </div>
+            <div class="flex items-center">
+                <span class="w-3 h-3 rounded-full bg-yellow-500 mr-1.5"></span>
+                <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Moderate</span>
+            </div>
+            <div class="flex items-center">
+                <span class="w-3 h-3 rounded-full bg-red-500 mr-1.5"></span>
+                <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Full</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6">
+        <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-chart-line mr-2 text-green-600"></i>Waste Collection Trends
+        </h2>
+        <div id="chart" class="h-64 sm:h-80 lg:h-96 w-full"></div>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden mb-6 sm:mb-8">
+    <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white" id="bins">
+                <i class="fas fa-trash-alt mr-2 text-green-600"></i>Smart Bins Status
+            </h2>
+            <div class="flex space-x-2">
+                <select id="statusFilter" onchange="filterBins()" class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                    <option value="all">All Status</option>
+                    <option value="Full">Full</option>
+                    <option value="Moderate">Moderate</option>
+                    <option value="Empty">Empty</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Bin ID</th>
+                    <th class="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Location</th>
+                    <th class="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Garbage %</th>
+                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Recyclable %</th>
+                    <th class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Weight</th>
+                    <th class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last Updated</th>
+                    <th class="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="binsTable">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if user.user_type == 'admin' or user.user_type == 'collector' %}
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+        <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+            <i class="fas fa-route mr-2 text-blue-600"></i>Optimized Collection Route
+        </h2>
+        <button onclick="optimizeRoute()" class="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm">
+            <i class="fas fa-magic mr-2"></i>Optimize Route
+        </button>
+    </div>
+    <div id="routeInfo" class="text-gray-600 dark:text-gray-400 mb-4">
+        <p>Click "Optimize Route" to generate the best collection path for full bins.</p>
+    </div>
+    <div id="routeMap" class="h-64 sm:h-80 w-full rounded-lg bg-gray-100 dark:bg-gray-700 mb-4"></div>
+    <div id="routeList" class="mt-4"></div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoF9om9IbLyb4sk4pTyLjBr5CdHm6mGHQ&v=weekly" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+console.log('Scripts loaded');
+
+let mainMap, routeMap;
+let binMarkers = [];
+let routeMapMarkers = [];
+let chart;
+
+function initMap() {
+    console.log('initMap called');
+    
+    const mapDiv = document.getElementById('mainMap');
+    if (!mapDiv) {
+        console.log('Map div not found, retrying...');
+        setTimeout(initMap, 500);
+        return;
+    }
+    
+    mainMap = new google.maps.Map(mapDiv, {
+        center: { lat: -8.899, lng: 33.454 },
+        zoom: 14,
+        mapTypeId: 'roadmap'
+    });
+    console.log('Main map created');
+    
+    {% if user.user_type == 'admin' or user.user_type == 'collector' %}
+    const routeMapDiv = document.getElementById('routeMap');
+    if (routeMapDiv) {
+        routeMap = new google.maps.Map(routeMapDiv, {
+            center: { lat: -8.899, lng: 33.454 },
+            zoom: 14
+        });
+    }
+    {% endif %}
+    
+    loadBins();
+    loadStats();
+    loadTrends();
+}
+
+window.initMap = initMap;
+
+window.addEventListener('load', function() {
+    console.log('Page loaded, checking Google Maps...');
+    if (typeof google !== 'undefined' && google.maps) {
+        console.log('Google available on load');
+        initMap();
+    } else {
+        setTimeout(function() {
+            if (typeof google !== 'undefined' && google.maps) {
+                initMap();
+            }
+        }, 2000);
+    }
+});
+</script>
+
+<script>
+async function loadBins() {
+    console.log('Loading bins...');
+    try {
+        const response = await fetch('/api/bins/map/');
+        const bins = await response.json();
+        console.log('Bins loaded:', bins.length);
+        
+        if (bins.length === 0) {
+            document.getElementById('binsTable').innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No bins found. Click "Seed Data" to create sample data.</td></tr>';
+            return;
+        }
+        
+        document.getElementById('binsTable').innerHTML = bins.map(bin => `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${bin.bin_id}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${bin.location_name || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <div class="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                        <div class="h-2 rounded-full ${bin.garbage_level >= 80 ? 'bg-red-500' : bin.garbage_level >= 50 ? 'bg-yellow-500' : 'bg-green-500'}" style="width: ${bin.garbage_level}%"></div>
+                    </div>
+                    <span class="text-xs">${bin.garbage_level}%</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${bin.recyclable_level}%</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${formatWeight(bin.recyclable_weight)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${bin.last_updated || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs leading-5 font-semibold rounded-full ${bin.status === 'Full' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : bin.status === 'Moderate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}">
+                        ${bin.status}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+        
+        binMarkers.forEach(m => m.setMap(null));
+        binMarkers = [];
+        
+        if (!mainMap) {
+            console.log('Map not ready');
+            setTimeout(() => loadBins(), 1000);
+            return;
+        }
+        
+        bins.forEach(bin => {
+            const marker = new google.maps.Marker({
+                position: { lat: bin.lat, lng: bin.lng },
+                map: mainMap,
+                title: bin.bin_id
+            });
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div style="padding: 10px; min-width: 150px;">
+                        <h4 style="margin: 0 0 8px; font-weight: bold;">${bin.bin_id}</h4>
+                        <p style="margin: 4px 0;"><strong>Status:</strong> ${bin.status}</p>
+                        <p style="margin: 4px 0;"><strong>Garbage:</strong> ${bin.garbage_level}%</p>
+                        <p style="margin: 4px 0;"><strong>Recyclable:</strong> ${bin.recyclable_level}%</p>
+                        <p style="margin: 4px 0;"><strong>Weight:</strong> ${formatWeight(bin.recyclable_weight)}</p>
+                        <p style="margin: 4px 0;"><strong>Location:</strong> ${bin.location_name || 'N/A'}</p>
+                    </div>
+                `
+            });
+            marker.addListener('click', () => {
+                infoWindow.open(mainMap, marker);
+            });
+            binMarkers.push(marker);
+        });
+        console.log('Markers added:', binMarkers.length);
+    } catch (error) {
+        console.error('Error loading bins:', error);
+    }
+}
+
+function filterBins() {
+    loadBins();
+}
+
+async function loadStats() {
+    try {
+        const response = await fetch('/api/stats/dashboard/');
+        const stats = await response.json();
+        
+        document.getElementById('totalBins').textContent = stats.active_bins || 0;
+        document.getElementById('fullBins').textContent = stats.full_bins || 0;
+        document.getElementById('totalHouseholds').textContent = stats.total_households || 0;
+        document.getElementById('totalPayments').textContent = 'TZS ' + (stats.total_payments || 0).toLocaleString();
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+async function loadTrends() {
+    try {
+        const response = await fetch('/api/stats/waste-trends/?days=30');
+        const data = await response.json();
+        
+        const ctx = document.getElementById('chart').getContext('2d');
+        
+        if (chart) chart.destroy();
+        
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date.substring(5)),
+                datasets: [{
+                    label: 'Avg Garbage %',
+                    data: data.map(d => d.avg_garbage),
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }, {
+                    label: 'Avg Recyclable %',
+                    data: data.map(d => d.avg_recyclable),
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error loading trends:', error);
+    }
+}
+
+function refreshMap() {
+    loadBins();
+    loadStats();
+}
+
+async function optimizeRoute() {
+    try {
+        const response = await fetch('/api/route/optimize/');
+        const route = await response.json();
+        
+        document.getElementById('routeInfo').innerHTML = `
+            <div class="flex items-center space-x-4">
+                <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                    <i class="fas fa-box mr-1"></i>${route.bin_count} bins
+                </span>
+                <span class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
+                    <i class="fas fa-road mr-1"></i>${route.total_distance} km
+                </span>
+            </div>
+        `;
+        
+        routeMapMarkers.forEach(m => m.setMap(null));
+        routeMapMarkers = [];
+        
+        if (!routeMap) return;
+        
+        const path = route.route.map(bin => ({ lat: bin.lat, lng: bin.lng }));
+        
+        route.route.forEach((bin, index) => {
+            const marker = new google.maps.Marker({
+                position: { lat: bin.lat, lng: bin.lng },
+                map: routeMap,
+                label: (index + 1).toString()
+            });
+            routeMapMarkers.push(marker);
+        });
+        
+        const polyline = new google.maps.Polyline({
+            path: path,
+            strokeColor: '#3B82F6',
+            strokeWeight: 3,
+            map: routeMap
+        });
+        
+        const bounds = new google.maps.LatLngBounds();
+        path.forEach(p => bounds.extend(p));
+        routeMap.fitBounds(bounds);
+        
+        document.getElementById('routeList').innerHTML = `
+            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Collection Order:</h4>
+            <ol class="list-decimal list-inside space-y-1">
+                ${route.route.map((bin, i) => `<li class="text-gray-700 dark:text-gray-300">${bin.bin_id} - ${bin.location_name || 'Location ' + (i+1)}</li>`).join('')}
+            </ol>
+        `;
+    } catch (error) {
+        console.error('Error optimizing route:', error);
+    }
+}
+
+async function seedData() {
+    try {
+        const csrfToken = getCookie('csrftoken');
+        const response = await fetch('/api/seed-data/', { 
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            alert('Failed: ' + JSON.stringify(error));
+            return;
+        }
+        
+        const result = await response.json();
+        alert('Data seeded: ' + result.users + ' users, ' + result.bins + ' bins, ' + result.iot_records + ' IoT records');
+        loadBins();
+        loadStats();
+    } catch (error) {
+        console.error('Error seeding data:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

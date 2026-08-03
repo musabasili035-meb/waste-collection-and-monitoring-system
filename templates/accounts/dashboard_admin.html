@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Admin Dashboard - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="mb-4 sm:mb-8">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400">System Controller - Iyunga, Mbeya</p>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-blue-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Total Households</p>
+                <p class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white" id="totalHouseholds">{{ total_households }}</p>
+            </div>
+            <div class="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-900 hidden sm:block">
+                <i class="fas fa-home text-blue-600 dark:text-blue-400 text-xl"></i>
+            </div>
+        </div>
+        <a href="/manage/households/" class="text-[10px] sm:text-xs text-green-600 hover:underline mt-1 sm:mt-2 inline-block">Manage Households</a>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Total Bins</p>
+                <p class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white" id="totalBins">{{ total_bins }}</p>
+            </div>
+            <div class="p-2 sm:p-3 rounded-full bg-green-100 dark:bg-green-900 hidden sm:block">
+                <i class="fas fa-trash-alt text-green-600 dark:text-green-400 text-xl"></i>
+            </div>
+        </div>
+        <a href="/manage/bins/" class="text-[10px] sm:text-xs text-green-600 hover:underline mt-1 sm:mt-2 inline-block">Manage Bins</a>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-red-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Full Bins</p>
+                <p class="text-xl sm:text-3xl font-bold text-red-600" id="fullBins">{{ full_bins_count }}</p>
+            </div>
+            <div class="p-2 sm:p-3 rounded-full bg-red-100 dark:bg-red-900 hidden sm:block">
+                <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-xl"></i>
+            </div>
+        </div>
+        <a href="/manage/routes/" class="text-[10px] sm:text-xs text-green-600 hover:underline mt-1 sm:mt-2 inline-block">View Routes</a>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-purple-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Revenue (TZS)</p>
+                <p class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white" id="totalRevenue">TZS {{ total_payments|floatformat:0|intcomma }}</p>
+            </div>
+            <div class="p-2 sm:p-3 rounded-full bg-purple-100 dark:bg-purple-900 hidden sm:block">
+                <i class="fas fa-coins text-purple-600 dark:text-purple-400 text-xl"></i>
+            </div>
+        </div>
+        <a href="/manage/payments/" class="text-[10px] sm:text-xs text-green-600 hover:underline mt-1 sm:mt-2 inline-block">View Payments</a>
+    </div>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-yellow-500">
+        <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Total Waste</p>
+        <p class="text-base sm:text-2xl font-bold text-gray-900 dark:text-white" id="totalWaste">{{ total_waste_kg|floatformat:1 }}</p>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-teal-500">
+        <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Recyclable</p>
+        <p class="text-base sm:text-2xl font-bold text-gray-900 dark:text-white" id="totalRecyclable">{{ total_recyclable_kg }}</p>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-cyan-500">
+        <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Active Bins</p>
+        <p class="text-base sm:text-2xl font-bold text-gray-900 dark:text-white" id="activeBins">{{ active_bins }}</p>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-orange-500">
+        <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Unpaid</p>
+        <p class="text-base sm:text-2xl font-bold text-orange-600" id="unpaidHouseholds">{{ unpaid_households }}</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6">
+        <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-map-marker-alt mr-2 text-red-600"></i>Bin Locations (Real-Time)
+        </h2>
+        <div id="binMap" class="h-64 sm:h-80 w-full rounded-lg bg-gray-100 dark:bg-gray-700"></div>
+        <div id="binList" class="mt-3 space-y-1 max-h-32 overflow-y-auto"></div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6">
+        <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-satellite-dish mr-2 text-green-600"></i>Live Bin Status (ESP32)
+            <span class="ml-2 text-xs text-green-500 animate-pulse">&#9679; LIVE</span>
+        </h2>
+        <div id="liveBinStatus" class="space-y-4">
+            <p class="text-sm text-gray-500">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6">
+        <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-magic mr-2 text-blue-600"></i>Quick Actions
+        </h2>
+        <div class="grid grid-cols-2 gap-2 sm:gap-4">
+            <a href="/manage/users/" class="p-2 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-center">
+                <i class="fas fa-users text-lg sm:text-2xl text-blue-600 mb-1 sm:mb-2"></i>
+                <p class="text-xs sm:text-sm font-medium">Manage Users</p>
+            </a>
+            <a href="/manage/bins/" class="p-2 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-center">
+                <i class="fas fa-trash-alt text-lg sm:text-2xl text-green-600 mb-1 sm:mb-2"></i>
+                <p class="text-xs sm:text-sm font-medium">Manage Bins</p>
+            </a>
+            <a href="/manage/households/" class="p-2 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-center">
+                <i class="fas fa-home text-lg sm:text-2xl text-purple-600 mb-1 sm:mb-2"></i>
+                <p class="text-xs sm:text-sm font-medium">Households</p>
+            </a>
+            <a href="/manage/routes/" class="p-2 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-center">
+                <i class="fas fa-route text-lg sm:text-2xl text-orange-600 mb-1 sm:mb-2"></i>
+                <p class="text-xs sm:text-sm font-medium">Routes</p>
+            </a>
+            <button onclick="seedData()" class="p-2 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-center">
+                <i class="fas fa-seedling text-lg sm:text-2xl text-green-600 mb-1 sm:mb-2"></i>
+                <p class="text-xs sm:text-sm font-medium">Seed Data</p>
+            </button>
+            <a href="/reports/" class="p-2 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-center">
+                <i class="fas fa-chart-bar text-lg sm:text-2xl text-red-600 mb-1 sm:mb-2"></i>
+                <p class="text-xs sm:text-sm font-medium">Reports</p>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoF9om9IbLyb4sk4pTyLjBr5CdHm6mGHQ&v=weekly&callback=initAdminMap" async defer></script>
+
+<script>
+let adminMap;
+let adminMarkers = [];
+
+function initAdminMap() {
+    const mapDiv = document.getElementById('binMap');
+    if (!mapDiv) return;
+    adminMap = new google.maps.Map(mapDiv, {
+        center: { lat: -8.899, lng: 33.454 },
+        zoom: 14
+    });
+    loadBinMap();
+    setInterval(loadBinMap, 10000);
+}
+
+window.initAdminMap = initAdminMap;
+
+async function loadBinMap() {
+    try {
+        const response = await fetch('/api/bins/map/');
+        const bins = await response.json();
+        
+        adminMarkers.forEach(m => m.setMap(null));
+        adminMarkers = [];
+        
+        const binList = document.getElementById('binList');
+        let listHtml = '';
+        const bounds = new google.maps.LatLngBounds();
+        let hasValid = false;
+        
+        bins.forEach(bin => {
+            if (bin.lat === 0 && bin.lng === 0) return;
+            
+            const pos = { lat: bin.lat, lng: bin.lng };
+            bounds.extend(pos);
+            hasValid = true;
+            
+            let color = '#22c55e';
+            if (bin.status === 'Full') color = '#ef4444';
+            else if (bin.status === 'Moderate') color = '#eab308';
+            
+            const marker = new google.maps.Marker({
+                position: pos,
+                map: adminMap,
+                title: bin.bin_id,
+                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: color, fillOpacity: 0.9, strokeWeight: 2, strokeColor: '#fff' }
+            });
+            
+            const info = new google.maps.InfoWindow({
+                content: '<div style="padding:8px"><b>' + bin.bin_id + '</b><br>Garbage: ' + bin.garbage_level + '%<br>Recyclable: ' + bin.recyclable_level + '%<br>Weight: ' + formatWeight(bin.recyclable_weight) + '<br>Status: ' + bin.status + '</div>'
+            });
+            marker.addListener('click', () => info.open(adminMap, marker));
+            adminMarkers.push(marker);
+            
+            listHtml += '<div class="flex items-center gap-2 text-xs"><span class="w-3 h-3 rounded-full" style="background:' + color + '"></span><span class="font-medium">' + bin.bin_id + '</span><span class="text-gray-500">Garbage: ' + bin.garbage_level + '%</span><span class="text-gray-500">Recycle: ' + bin.recyclable_level + '%</span><span class="text-gray-500">Weight: ' + formatWeight(bin.recyclable_weight || 0) + '</span></div>';
+        });
+        
+        if (binList) binList.innerHTML = listHtml || '<p class="text-xs text-gray-500">No bins with GPS data yet</p>';
+        if (hasValid && adminMap) adminMap.fitBounds(bounds);
+    } catch (e) {
+        console.error('Error loading bin map:', e);
+    }
+}
+
+async function loadLiveBinStatus() {
+    try {
+        const response = await fetch('/api/bins/map/');
+        const bins = await response.json();
+        const container = document.getElementById('liveBinStatus');
+        if (!container) return;
+
+        if (bins.length === 0) {
+            container.innerHTML = '<p class="text-sm text-gray-500">No bins reporting data yet.</p>';
+            return;
+        }
+
+        let html = '';
+        bins.forEach(bin => {
+            const garbageColor = bin.garbage_level > 80 ? 'red' : bin.garbage_level > 30 ? 'yellow' : 'green';
+            const recycleColor = bin.recyclable_level > 80 ? 'red' : bin.recyclable_level > 30 ? 'yellow' : 'green';
+
+            html += `
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-bold text-gray-900 dark:text-white">${bin.bin_id}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full ${garbageColor === 'red' ? 'bg-red-100 text-red-800' : garbageColor === 'yellow' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">${bin.status}</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400">General Waste</p>
+                        <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-1">
+                            <div class="bg-red-500 h-2 rounded-full" style="width:${bin.garbage_level}%"></div>
+                        </div>
+                        <p class="font-semibold text-gray-900 dark:text-white mt-1">${bin.garbage_level}%</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400">Recyclable</p>
+                        <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-1">
+                            <div class="bg-green-500 h-2 rounded-full" style="width:${bin.recyclable_level}%"></div>
+                        </div>
+                        <p class="font-semibold text-gray-900 dark:text-white mt-1">${bin.recyclable_level}%</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400">Weight</p>
+                        <p class="font-semibold text-gray-900 dark:text-white mt-3">${formatWeight(bin.recyclable_weight)}</p>
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-2">Lat: ${bin.lat.toFixed(6)}, Lng: ${bin.lng.toFixed(6)}</p>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('Error loading live bin status:', e);
+    }
+}
+
+async function loadAdminStats() {
+    try {
+        const response = await fetch('/api/stats/admin/');
+        const stats = await response.json();
+        
+        document.getElementById('totalHouseholds').textContent = stats.total_households || 0;
+        document.getElementById('totalBins').textContent = stats.total_bins || 0;
+        document.getElementById('fullBins').textContent = stats.full_bins || 0;
+        document.getElementById('unpaidHouseholds').textContent = stats.unpaid_households || 0;
+        document.getElementById('totalWaste').textContent = (stats.total_waste_kg || 0).toFixed(1);
+        document.getElementById('totalRecyclable').textContent = formatWeight(stats.total_recyclable_kg || 0);
+        document.getElementById('totalRevenue').textContent = 'TZS ' + (stats.total_payments || 0).toLocaleString();
+        document.getElementById('activeBins').textContent = stats.active_bins || 0;
+    } catch (error) {
+        console.error('Error loading admin stats:', error);
+    }
+}
+
+async function loadTrends() {
+    try {
+        const response = await fetch('/api/stats/waste-trends/?days=30');
+        const data = await response.json();
+        
+        const ctx = document.getElementById('chart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date.substring(5)),
+                datasets: [{
+                    label: 'Avg Garbage %',
+                    data: data.map(d => d.avg_garbage),
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }, {
+                    label: 'Avg Recyclable %',
+                    data: data.map(d => d.avg_recyclable),
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
+        });
+    } catch (error) {
+        console.error('Error loading trends:', error);
+    }
+}
+
+async function seedData() {
+    if (!confirm('This will create sample data. Continue?')) return;
+    
+    try {
+        const csrfToken = getCookie('csrftoken');
+        const response = await fetch('/api/seed-data/', { 
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        
+        const result = await response.json();
+        alert('Data seeded: ' + result.users + ' users, ' + result.bins + ' bins, ' + result.iot_records + ' IoT records');
+        loadAdminStats();
+    } catch (error) {
+        console.error('Error seeding data:', error);
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+loadAdminStats();
+loadTrends();
+loadLiveBinStatus();
+setInterval(loadLiveBinStatus, 8000);
+setInterval(loadAdminStats, 30000);
+
+window.addEventListener('load', function() {
+    if (typeof google !== 'undefined' && google.maps) {
+        initAdminMap();
+    }
+});
+</script>
+{% endblock %}

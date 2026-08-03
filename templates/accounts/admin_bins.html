@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}Bins Management - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="mb-4 sm:mb-8">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Bins Management</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400">Manage smart bins</p>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6 mb-6 sm:mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-blue-500">
+        <p class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ bins.count }}</p>
+        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total Bins</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-green-500">
+        <p class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ active_bins|default:0 }}</p>
+        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Active</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-yellow-500">
+        <p class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ moderate_bins|default:0 }}</p>
+        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Moderate</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-6 border-l-4 border-red-500">
+        <p class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ full_bins|default:0 }}</p>
+        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Full</p>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Add New Bin</h2>
+    </div>
+    <form method="POST" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create">
+        <div>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bin ID</label>
+            <input type="text" name="bin_id" required placeholder="e.g., BIN0001" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+        </div>
+        <div>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Latitude (optional — auto-filled by ESP32)</label>
+            <input type="number" step="0.000001" name="latitude" id="latInput" placeholder="-8.899" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+        </div>
+        <div>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Longitude (optional — auto-filled by ESP32)</label>
+            <input type="number" step="0.000001" name="longitude" id="lngInput" placeholder="33.454" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+        </div>
+        <div>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location Name</label>
+            <input type="text" name="location_name" placeholder="e.g., Main Road" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+        </div>
+        <div>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign Household</label>
+            <select name="household" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+                <option value="">-- Select Household --</option>
+                {% for hh in households %}
+                <option value="{{ hh.id }}">{{ hh.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign Collector</label>
+            <select name="collector" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+                <option value="">-- Select Collector --</option>
+                {% for col in collectors %}
+                <option value="{{ col.id }}">{{ col.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="sm:col-span-2 lg:col-span-3">
+            <div id="pickerMap" class="h-48 sm:h-64 w-full rounded-lg bg-gray-100 dark:bg-gray-700 mb-3"></div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Click on the map to set bin location</p>
+        </div>
+        <div class="sm:col-span-2 lg:col-span-3">
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
+                <i class="fas fa-plus mr-2"></i>Create Bin
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+    <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">All Bins</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Bin ID</th>
+                    <th class="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Location</th>
+                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Household</th>
+                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Collector</th>
+                    <th class="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                    <th class="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Garbage</th>
+                    <th class="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for bin in bins %}
+                <tr>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{{ bin.bin_id }}</td>
+                    <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ bin.location_name|default:'N/A' }}</td>
+                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ bin.household.name|default:'Unassigned' }}</td>
+                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ bin.assigned_collector.username|default:'Unassigned' }}</td>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <span class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-full 
+                            {% if bin.status == 'full' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                            {% elif bin.status == 'moderate' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                            {% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% endif %}">
+                            {{ bin.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                        {% with bin.iot_data.first as latest %}{{ latest.garbage_level|default:'0' }}%{% endwith %}
+                    </td>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <form method="POST" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="bin_id" value="{{ bin.bin_id }}">
+                            <button type="submit" class="text-red-600 hover:text-red-800 p-1" onclick="return confirm('Delete this bin?')">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-4 text-center text-gray-500 text-sm">No bins found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoF9om9IbLyb4sk4pTyLjBr5CdHm6mGHQ&v=weekly&callback=initPickerMap" async defer></script>
+<script>
+let pickerMap;
+let pickerMarker;
+
+function initPickerMap() {
+    const mapDiv = document.getElementById('pickerMap');
+    if (!mapDiv) return;
+
+    pickerMap = new google.maps.Map(mapDiv, {
+        center: { lat: -8.899, lng: 33.454 },
+        zoom: 15,
+        mapTypeId: 'roadmap'
+    });
+
+    pickerMap.addListener('click', function(e) {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        document.getElementById('latInput').value = lat.toFixed(6);
+        document.getElementById('lngInput').value = lng.toFixed(6);
+        if (pickerMarker) pickerMarker.setMap(null);
+        pickerMarker = new google.maps.Marker({
+            position: { lat, lng },
+            map: pickerMap,
+            draggable: true,
+            animation: google.maps.Animation.DROP
+        });
+        pickerMarker.addListener('dragend', function(ev) {
+            document.getElementById('latInput').value = ev.latLng.lat().toFixed(6);
+            document.getElementById('lngInput').value = ev.latLng.lng().toFixed(6);
+        });
+    });
+}
+
+window.initPickerMap = initPickerMap;
+
+window.addEventListener('load', function() {
+    if (typeof google !== 'undefined' && google.maps) {
+        initPickerMap();
+    }
+});
+</script>
+{% endblock %}

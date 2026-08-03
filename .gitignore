@@ -1,0 +1,22 @@
+*.pyc
+__pycache__/
+*.log
+*.sqlite3
+db.sqlite3
+/media/
+/static/
+.env
+.env.local
+*.egg-info/
+.venv/
+venv/
+
+# Local tools / binaries
+/ngrok_bin/
+
+# Office temp/lock files
+~$*
+*.docx
+*.doc
+*.xlsx
+*.pptx

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Collection Schedules - Iyunga Waste Management{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Collection Notifications</h1>
+            <p class="text-gray-500 dark:text-gray-400">View all collection schedules across the system and notify households</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div class="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-plus-circle mr-2 text-green-600"></i>New Schedule
+        </h2>
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Household</label>
+                <select name="household_id" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+                    <option value="">Select Household</option>
+                    {% for hh in households %}
+                    <option value="{{ hh.id }}">{{ hh.name }} ({{ hh.address }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bin (optional)</label>
+                <select name="bin_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+                    <option value="">Any Bin</option>
+                    {% for bin_obj in bins %}
+                    <option value="{{ bin_obj.id }}">{{ bin_obj.bin_id }} - {{ bin_obj.location_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                <input type="date" name="scheduled_date" required value="{{ today|date:'Y-m-d' }}"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time Slot</label>
+                <select name="time_slot" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500">
+                    <option value="morning">Morning (6AM - 10AM)</option>
+                    <option value="midday">Midday (10AM - 2PM)</option>
+                    <option value="afternoon">Afternoon (2PM - 6PM)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <textarea name="notes" rows="3" placeholder="Special instructions..."
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500"></textarea>
+            </div>
+            <button type="submit" class="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                <i class="fas fa-calendar-plus mr-2"></i>Schedule Collection
+            </button>
+        </form>
+    </div>
+
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-list mr-2 text-green-600"></i>All Collection Notifications ({{ schedules|length }})
+        </h2>
+
+        {% if schedules %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="text-xs text-gray-700 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-3">Date</th>
+                        <th class="px-4 py-3">Time</th>
+                        <th class="px-4 py-3">Collector</th>
+                        <th class="px-4 py-3">Household</th>
+                        <th class="px-4 py-3">Bin</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Notes</th>
+                        <th class="px-4 py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in schedules %}
+                    <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ s.scheduled_date|date:"M d, Y" }}</td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ s.get_time_slot_display }}</td>
+                        <td class="px-4 py-3">
+                            <p class="font-medium text-gray-900 dark:text-white">{{ s.collector.get_full_name|default:s.collector.username }}</p>
+                            <p class="text-xs text-gray-500">{{ s.collector.phone }}</p>
+                        </td>
+                        <td class="px-4 py-3">
+                            <p class="font-medium text-gray-900 dark:text-white">{{ s.household.name }}</p>
+                            <p class="text-xs text-gray-500">{{ s.household.contact_phone }}</p>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ s.bin.bin_id|default:"—" }}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                {% if s.status == 'scheduled' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                {% elif s.status == 'in_progress' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                                {% elif s.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                {% elif s.status == 'cancelled' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                {% endif %}">
+                                {{ s.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-[150px] truncate">{{ s.notes|default:"—" }}</td>
+                        <td class="px-4 py-3">
+                            {% if s.status == 'scheduled' %}
+                            <form method="POST" action="{% url 'update_schedule_status_api' s.id %}" class="api-status-form inline" data-schedule-id="{{ s.id }}">
+                                {% csrf_token %}
+                                <button type="button" class="status-btn px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200" data-status="in_progress">
+                                    Start
+                                </button>
+                                <button type="button" class="status-btn px-2 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200" data-status="cancelled">
+                                    Cancel
+                                </button>
+                            </form>
+                            {% elif s.status == 'in_progress' %}
+                            <form method="POST" action="{% url 'update_schedule_status_api' s.id %}" class="api-status-form inline" data-schedule-id="{{ s.id }}">
+                                {% csrf_token %}
+                                <button type="button" class="status-btn px-2 py-1 text-xs font-medium text-green-600 bg-green-100 rounded hover:bg-green-200" data-status="completed">
+                                    Complete
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-xs text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-calendar-alt text-4xl mb-3"></i>
+            <p>No notifications yet. Create one to notify a household.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const form = this.closest('.api-status-form');
+        const scheduleId = form.dataset.scheduleId;
+        const status = this.dataset.status;
+        const csrf = form.querySelector('[name=csrfmiddlewaretoken]').value;
+        const row = form.closest('tr');
+
+        fetch(`/api/schedules/${scheduleId}/status/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf,
+            },
+            body: JSON.stringify({ status: status }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(() => alert('Network error'));
+    });
+});
+</script>
+{% endblock %}

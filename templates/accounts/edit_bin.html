@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Bin - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4">Edit Bin: {{ bin.bin_id }}</h1>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bin ID</label>
+                    <input type="text" value="{{ bin.bin_id }}" disabled
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Household</label>
+                    <input type="text" value="{{ bin.household.name }}" disabled
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location Name</label>
+                <input type="text" name="location_name" value="{{ bin.location_name }}"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pin Location on Map</label>
+                <div id="editMap" class="h-72 w-full rounded-lg bg-gray-100 dark:bg-gray-700 mb-2"></div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Click on the map or drag the marker to update bin location</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Latitude</label>
+                    <input type="number" step="0.000001" name="latitude" id="editLat" value="{{ bin.latitude }}" required
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Longitude</label>
+                    <input type="number" step="0.000001" name="longitude" id="editLng" value="{{ bin.longitude }}" required
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <a href="{% url 'household' %}" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                    <i class="fas fa-save mr-2"></i>Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoF9om9IbLyb4sk4pTyLjBr5CdHm6mGHQ&v=weekly&callback=initEditMap" async defer></script>
+<script>
+let editMap;
+let editMarker;
+
+function initEditMap() {
+    const mapDiv = document.getElementById('editMap');
+    if (!mapDiv) return;
+
+    const lat = parseFloat(document.getElementById('editLat').value) || -8.899;
+    const lng = parseFloat(document.getElementById('editLng').value) || 33.454;
+    const pos = { lat, lng };
+
+    editMap = new google.maps.Map(mapDiv, {
+        center: pos,
+        zoom: 17,
+        mapTypeId: 'roadmap'
+    });
+
+    editMarker = new google.maps.Marker({
+        position: pos,
+        map: editMap,
+        draggable: true,
+        animation: google.maps.Animation.DROP
+    });
+
+    editMarker.addListener('dragend', function(ev) {
+        document.getElementById('editLat').value = ev.latLng.lat().toFixed(6);
+        document.getElementById('editLng').value = ev.latLng.lng().toFixed(6);
+    });
+
+    editMap.addListener('click', function(e) {
+        editMarker.setPosition(e.latLng);
+        document.getElementById('editLat').value = e.latLng.lat().toFixed(6);
+        document.getElementById('editLng').value = e.latLng.lng().toFixed(6);
+    });
+}
+
+window.initEditMap = initEditMap;
+
+window.addEventListener('load', function() {
+    if (typeof google !== 'undefined' && google.maps) {
+        initEditMap();
+    }
+});
+</script>
+{% endblock %}

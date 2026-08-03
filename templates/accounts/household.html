@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}My Household - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">My Household Dashboard</h1>
+    
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-6">
+            <div class="flex items-center">
+                <div class="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400">
+                    <i class="fas fa-home text-sm sm:text-base"></i>
+                </div>
+                <div class="ml-2 sm:ml-4">
+                    <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Households</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">{{ households.count }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-6">
+            <div class="flex items-center">
+                <div class="p-2 sm:p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400">
+                    <i class="fas fa-trash-alt text-sm sm:text-base"></i>
+                </div>
+                <div class="ml-2 sm:ml-4">
+                    <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">My Bins</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white">{{ bins|length }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-6">
+            <div class="flex items-center">
+                <div class="p-2 sm:p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-400">
+                    <i class="fas fa-recycle text-sm sm:text-base"></i>
+                </div>
+                <div class="ml-2 sm:ml-4">
+                    <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Recyclables</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white" id="totalRecyclables">-</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-6">
+            <div class="flex items-center">
+                <div class="p-2 sm:p-3 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400">
+                    <i class="fas fa-credit-card text-sm sm:text-base"></i>
+                </div>
+                <div class="ml-2 sm:ml-4">
+                    <p class="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Total Paid</p>
+                    <p class="text-base sm:text-2xl font-semibold text-gray-900 dark:text-white" id="totalPaid">TZS 0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">My Bins Status</h3>
+            <div id="binsList" class="space-y-3">
+                {% for bin in bins %}
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full 
+                            {% if bin.garbage_level >= 80 %}bg-red-500
+                            {% elif bin.garbage_level >= 50 %}bg-yellow-500
+                            {% else %}bg-green-500{% endif %}">
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ bin.bin_id }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ bin.location }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ bin.garbage_level }}% full</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ bin.recyclable_level }}% recyclable</p>
+                        </div>
+                        <a href="{% url 'edit_bin' bin.id %}" class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 dark:text-gray-400">No bins assigned to your households.</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment History</h2>
+            <div id="paymentHistory" class="space-y-3">
+                <p class="text-gray-500 dark:text-gray-400">Loading payment history...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadPaymentHistory() {
+    try {
+        const response = await fetch('/api/payments/history/');
+        const payments = await response.json();
+        
+        const container = document.getElementById('paymentHistory');
+        
+        if (payments.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No payments yet.</p>';
+            return;
+        }
+        
+        let total = 0;
+        container.innerHTML = payments.slice(0, 5).map(p => {
+            total += parseFloat(p.amount);
+            return `
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div>
+                    <p class="font-medium text-gray-900 dark:text-white">TZS ${parseInt(p.amount).toLocaleString()}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">${new Date(p.payment_date).toLocaleDateString()}</p>
+                </div>
+                <span class="px-2 py-1 text-xs rounded-full ${p.payment_method === 'mobile' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">
+                    ${p.payment_method}
+                </span>
+            </div>`;
+        }).join('');
+        
+        document.getElementById('totalPaid').textContent = 'TZS ' + total.toLocaleString();
+    } catch (error) {
+        console.error('Error loading payments:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadPaymentHistory);
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Bin - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4">Register New Bin</h1>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bin ID</label>
+                <input type="text" name="bin_id" required placeholder="e.g., BIN-HH-001"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Household</label>
+                <select name="household" required
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                    {% for hh in households %}
+                    <option value="{{ hh.id }}">{{ hh.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location Name</label>
+                <input type="text" name="location_name" placeholder="e.g., Backyard, Kitchen"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pin Location on Map</label>
+                <div id="registerMap" class="h-72 w-full rounded-lg bg-gray-100 dark:bg-gray-700 mb-2"></div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Click on the map to set bin location, then drag the marker to fine-tune</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Latitude</label>
+                    <input type="number" step="0.000001" name="latitude" id="regLat" required readonly
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Longitude</label>
+                    <input type="number" step="0.000001" name="longitude" id="regLng" required readonly
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <a href="{% url 'admin_bins' %}" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Register Bin
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoF9om9IbLyb4sk4pTyLjBr5CdHm6mGHQ&v=weekly&callback=initRegisterMap" async defer></script>
+<script>
+let registerMap;
+let registerMarker;
+
+function initRegisterMap() {
+    const mapDiv = document.getElementById('registerMap');
+    if (!mapDiv) return;
+
+    registerMap = new google.maps.Map(mapDiv, {
+        center: { lat: -8.899, lng: 33.454 },
+        zoom: 15,
+        mapTypeId: 'roadmap'
+    });
+
+    registerMap.addListener('click', function(e) {
+        placeMarker(e.latLng);
+    });
+}
+
+function placeMarker(latLng) {
+    const lat = latLng.lat();
+    const lng = latLng.lng();
+    document.getElementById('regLat').value = lat.toFixed(6);
+    document.getElementById('regLng').value = lng.toFixed(6);
+
+    if (registerMarker) {
+        registerMarker.setPosition(latLng);
+    } else {
+        registerMarker = new google.maps.Marker({
+            position: latLng,
+            map: registerMap,
+            draggable: true,
+            animation: google.maps.Animation.DROP
+        });
+        registerMarker.addListener('dragend', function(ev) {
+            document.getElementById('regLat').value = ev.latLng.lat().toFixed(6);
+            document.getElementById('regLng').value = ev.latLng.lng().toFixed(6);
+        });
+    }
+}
+
+window.initRegisterMap = initRegisterMap;
+
+window.addEventListener('load', function() {
+    if (typeof google !== 'undefined' && google.maps) {
+        initRegisterMap();
+    }
+});
+</script>
+{% endblock %}

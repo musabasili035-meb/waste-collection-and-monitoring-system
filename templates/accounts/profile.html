@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Iyunga Waste Management{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">My Profile</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div class="md:col-span-1">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 text-center">
+                {% if user.profile_image %}
+                <img src="{{ user.profile_image.url }}" alt="{{ user.username }}"
+                    class="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full object-cover border-4 border-green-100 dark:border-green-900 mb-4">
+                {% else %}
+                <div class="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold mb-4 shadow-lg">
+                    {{ user.username|make_list|first|upper }}
+                </div>
+                {% endif %}
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">{{ user.username }}</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ user.get_user_type_display }}</p>
+                <span class="inline-block mt-2 px-3 py-1 text-xs sm:text-sm rounded-full 
+                    {% if user.user_type == 'admin' %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200
+                    {% elif user.user_type == 'collector' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                    {% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% endif %}">
+                    {{ user.get_user_type_display }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="md:col-span-2">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Profile</h3>
+                
+                <form method="post" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                            <input type="text" value="{{ user.username }}" disabled
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                            <input type="email" name="email" value="{{ user.email|default:'' }}"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+                            <input type="text" name="phone" value="{{ user.phone|default:'' }}"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+                            <input type="text" name="address" value="{{ user.address|default:'' }}"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Photo</label>
+                        <input type="file" name="profile_image" accept="image/*"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Change Password</h3>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="change_password" value="1">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Password</label>
+                            <input type="password" name="old_password" required
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                            <input type="password" name="new_password1" required
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
+                            <input type="password" name="new_password2" required
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                            <i class="fas fa-key mr-2"></i>Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {% if households %}
+            {% for hh in households %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Household Information</h3>
+                    {% if hh.bins.count %}
+                    <span class="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2.5 py-1 rounded-lg">{{ hh.bins.count }} bin{{ hh.bins.count|pluralize }}</span>
+                    {% endif %}
+                </div>
+                
+                <form method="post" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="household_id" value="{{ hh.id }}">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Household Name</label>
+                            <input type="text" name="hh_name" value="{{ hh.name }}"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Phone</label>
+                            <input type="text" name="hh_phone" value="{{ hh.contact_phone|default:'' }}"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+                            <input type="text" name="hh_address" value="{{ hh.address }}"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Passport Photo</label>
+                            <input type="file" name="hh_photo" accept="image/*"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
+                        </div>
+                        <div class="flex items-end">
+                            {% if hh.passport_photo %}
+                            <div class="flex items-center gap-2">
+                                <img src="{{ hh.passport_photo.url }}" alt="Passport" class="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-600">
+                                <span class="text-xs text-gray-400">Uploaded</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" name="save_household" value="1"
+                            class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save Household
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">My Households</h3>
+                <p class="text-gray-500 dark:text-gray-400">No households registered yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

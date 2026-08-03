@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}My Bins - Iyunga Waste Management{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">My Assigned Bins</h1>
+    <p class="text-gray-500 dark:text-gray-400">View and manage bins assigned to you</p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden mb-6">
+    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <i class="fas fa-trash-alt mr-2 text-green-600"></i>Assigned Bins
+        </h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Bin ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Location</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Garbage %</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Recyclable %</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Weight</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="myBinsTable">
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadMyBinsTable();
+});
+
+async function loadMyBinsTable() {
+    try {
+        const response = await fetch('/api/bins/collector/');
+        const bins = await response.json();
+
+        if (bins.length === 0) {
+            document.getElementById('myBinsTable').innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No bins assigned to you</td></tr>';
+            return;
+        }
+
+        document.getElementById('myBinsTable').innerHTML = bins.map(bin => `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${bin.bin_id}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${bin.location_name || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${bin.garbage_level}%</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${bin.recyclable_level}%</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${formatWeight(bin.recyclable_weight)}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs leading-5 font-semibold rounded-full ${bin.status === 'Full' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : bin.status === 'Moderate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}">
+                        ${bin.status}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <button onclick="markCollected('${bin.bin_id}')" class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">
+                        Mark Collected
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading my bins:', error);
+    }
+}
+
+async function markCollected(binId) {
+    try {
+        const csrfToken = getCookie('csrftoken');
+        const response = await fetch('/api/bins/collect/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ bin_id: binId })
+        });
+
+        if (response.ok) {
+            alert('Bin marked as collected!');
+            loadMyBinsTable();
+        } else {
+            alert('Failed to mark bin as collected');
+        }
+    } catch (error) {
+        console.error('Error marking collected:', error);
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
