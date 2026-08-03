@@ -8,9 +8,16 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/wsgi/
 """
 
 import os
+import sys
 
-from django.core.wsgi import get_wsgi_application
+# Add the project directory (the folder containing manage.py) to the Python path.
+# This auto-detects the checkout root, so it works on PythonAnywhere and locally.
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if path not in sys.path:
+    sys.path.append(path)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'iyunga_waste.settings')
+
+from django.core.wsgi import get_wsgi_application
 
 application = get_wsgi_application()
